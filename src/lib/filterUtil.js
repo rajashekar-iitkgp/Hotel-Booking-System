@@ -1,4 +1,37 @@
 /**
+ * @param {Array} properties 
+ * @return {Map<number, boolean>} 
+ */
+function computeSuperHostMap(properties) {
+  const hostRatings = new Map();
+ 
+  for (const property of properties) {
+    const { hostId, stars } = property;
+    if (!hostRatings.has(hostId)) {
+      hostRatings.set(hostId, { totalStars: 0, propertyCount: 0 });
+    }
+    const stats = hostRatings.get(hostId);
+    stats.totalStars += stars;
+    stats.propertyCount += 1;
+  }
+
+  const superHostMap = new Map();
+  for (const [hostId, { totalStars, propertyCount }] of hostRatings.entries()) {
+    const averageRating = totalStars / propertyCount;
+    superHostMap.set(hostId, averageRating >= 4);
+  }
+
+  return superHostMap;
+}
+
+/**
+ * Determine if the host of the specified property is a "Super Host".
+ * @param {Object} property - The property currently being checked for "Super Host" status
+ * @param {Map<number, boolean>} superHostMap - Map of hostId to super host status
+ * @return {Boolean} - true if the host of property is a "Super Host". Otherwise false.
+
+
+/**
  * Filter properties based on filter criteria
  * @param  {Array} properties - Array of all properties
  * @param  {Object} filters - The filters being applied to the properties
@@ -23,12 +56,15 @@ export const filterProperties = (properties, filters) => {
   const failsRangeCheck = (range, field) => range && (range[0] > field || range[1] < field);
   const failsSetCheck = (set, field) => set.size > 0 && !set.has(field);
 
+
+  const superHostMap = superHostFilter ? computeSuperHostMap(properties) : null;
+
   return properties.filter((property) => {
     if (locationFilter && locationFilter !== property.country) {
       return false;
     }
 
-    if (superHostFilter && !isSuperHost(property, properties)) {
+    if (superHostFilter && !isSuperHost(property, superHostMap)) {
       return false;
     }
 
@@ -57,9 +93,8 @@ export const filterProperties = (properties, filters) => {
  * @param {Array} allProperties - Array of all properties
  * @return {Boolean} - true if the host of `property` is a "Super Host". Otherwise false.
  */
-function isSuperHost(property, allProperties) {
-  //TODO: replace placeholder implementation
-  return true;
+function isSuperHost(property, superHostMap) {
+  return superHostMap.get(property.hostId) || false;
 }
 
 export const RATE_FILTER_META = {

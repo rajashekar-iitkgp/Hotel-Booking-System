@@ -1,20 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
-import './PropertyGrid.scss';
-import { ApiUtil } from '../../lib/apiUtil';
-import { getPropertiesForPage } from '../../lib/paginationUtil';
-import Pagination from '../Pagination/Pagination';
+import React, { useEffect, useState } from "react";
+import PropTypes from "prop-types";
+import { Link } from "react-router-dom";
+import "./PropertyGrid.scss";
+import { ApiUtil } from "../../lib/apiUtil";
+import { filterProperties } from "../../lib/filterUtil";
+import Pagination from "../Pagination/Pagination";
 
-const PropertyGrid = () => {
-  const [properties, setProperties] = useState(null);
+const PropertyGrid = ({ filters }) => {
+  const [properties, setProperties] = useState([]);
   const [page, setPage] = useState(1);
+  const [filteredProperties, setFilteredProperties] = useState([]);
 
   useEffect(() => {
     ApiUtil.getProperties().then((data) => setProperties(data));
   }, []);
 
-  if (!properties || properties.length === 0) {
+  useEffect(() => {
+    setFilteredProperties(filterProperties(properties, filters));
+  }, [properties, filters]);
+
+  if (!filteredProperties || filteredProperties.length === 0) {
     return (
       <div className="property-grid">
         <div className="no-results">No Properties Found</div>
@@ -22,7 +27,10 @@ const PropertyGrid = () => {
     );
   }
 
-  const paginatedProperties = getPropertiesForPage(properties, page);
+  const paginatedProperties = filteredProperties.slice(
+    (page - 1) * 10,
+    page * 10
+  );
 
   return (
     <div className="property-grid">
@@ -33,7 +41,11 @@ const PropertyGrid = () => {
           return (
             <li key={`property-card-${index}`}>
               <Link to={`/property/${id}`} className="property-card">
-                <img src={imageSrc} alt={imageAltText} className="property-card-image" />
+                <img
+                  src={imageSrc}
+                  alt={imageAltText}
+                  className="property-card-image"
+                />
                 <div className="property-card-content">
                   <div className="property-card-title">{name}</div>
                   <span>
@@ -57,13 +69,17 @@ const PropertyGrid = () => {
           );
         })}
       </ul>
-      <Pagination page={page} setPage={setPage} propertyCount={properties.length} />
+      <Pagination
+        page={page}
+        setPage={setPage}
+        propertyCount={filteredProperties.length}
+      />
     </div>
   );
 };
 
 PropertyGrid.propTypes = {
-  page: PropTypes.number,
+  filters: PropTypes.object.isRequired,
 };
 
 export default PropertyGrid;

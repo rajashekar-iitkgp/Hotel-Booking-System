@@ -2,54 +2,75 @@ import * as PropTypes from 'prop-types';
 import './AppHeader.scss';
 import { ReactComponent as Logo } from '../../assets/logo.svg';
 import { Link, useHistory } from 'react-router-dom';
-import React, { useRef, useState } from 'react';
-import Select from 'react-select';
+import React, { useRef, useState } from "react";
+import Select from "react-select";
 
 /**
- * Get the node in `propertyLookupTree` that corresponds to `searchText`
+ * Get the node in propertyLookupTree that corresponds to searchText
  * @param {object} propertyLookupTree - A tree containing each property grouped by the letters in it's name.
- * @param {string} searchText - Text to look for in `propertyLookupTree`
- * @returns {object | undefined} The node in propertyLookupTree that corresponds to `searchText` or undefined if no
+ * @param {string} searchText - Text to look for in propertyLookupTree
+ * @returns {object | undefined} The node in propertyLookupTree that corresponds to searchText or undefined if no
  * corresponding node can be found.
  */
 function goToNode(propertyLookupTree, searchText) {
-  //TODO: optionally implement function
+  let currentNode = propertyLookupTree;
+
+  // Traverse the tree character by character
+  for (const char of searchText.toLowerCase()) {
+    if (!currentNode[char]) {
+      return undefined; // No matching node found
+    }
+    currentNode = currentNode[char];
+  }
+
+  return currentNode;
 }
 
 /**
- * Get an array of all of the matches in `node` and the nodes below it in the tree
+ * Get an array of all of the matches in node and the nodes below it in the tree
  * @param {object} node - a node of the propertyLookupTree. Note: the entire tree can also be thought of as the root node.
- * @return An array of all matches under `node`
+ * @return An array of all matches under node
  */
 function collectAllMatches(node) {
-  //TODO: optionally implement function
-}
+  const matches = [];
 
-/**
- * Find all properties in propertyLookupTree where the name starts with `searchText`
- * @param {object} propertyLookupTree - A tree containing each property grouped by the letters in it's name.
- * @example if there were 3 properties named "B", "Bar" and "Baz" then propertyLookupTree would be:
-  {
-    b: {
-      match: {id: "b", name: "B"},
-      a: {
-        r: {
-          match: {id: "bar", name: "Bar"}
-        },
-        z: {
-          match: {id: "baz", name: "Baz"}
-        }
+  // Recursive helper function to collect matches
+  function traverse(currentNode) {
+    // If the current node has a match, add it to the matches array
+    if (currentNode.match) {
+      matches.push(currentNode.match);
+    }
+
+    // Recursively search through all child nodes
+    for (const key in currentNode) {
+      if (key !== "match" && typeof currentNode[key] === "object") {
+        traverse(currentNode[key]);
       }
     }
   }
+
+  traverse(node);
+  return matches;
+}
+
+/**
+ * Find all properties in propertyLookupTree where the name starts with searchText
+ * @param {object} propertyLookupTree - A tree containing each property grouped by the letters in it's name.
  * @param {string} searchText - lowercase text to be used to find matching properties
- * @return A list of match objects (with `name` and `id` properties) for properties that match `searchText`
- * @example if `searchText` is "ba" and `propertyLookupTree` is the example listed above then the return value would be:
- * [{id: "bar", name: "Bar"}, {id: "baz", name: "Baz"}]
+ * @return A list of match objects (with name and id properties) for properties that match searchText
  */
 export function findMatches(propertyLookupTree, searchText) {
-  //TODO: implement function
-  return [];
+  // If search text is empty, return an empty array
+  if (!searchText) return [];
+
+  // Find the node corresponding to the search text
+  const matchNode = goToNode(propertyLookupTree, searchText);
+
+  // If no matching node is found, return an empty array
+  if (!matchNode) return [];
+
+  // Collect all matches under this node
+  return collectAllMatches(matchNode);
 }
 
 function AppHeader({ propertyLookupTree }) {
@@ -60,7 +81,10 @@ function AppHeader({ propertyLookupTree }) {
   function onSearchChange(searchText) {
     if (searchText.length > 0) {
       let matches = findMatches(propertyLookupTree, searchText.toLowerCase());
-      let options = matches.map((match) => ({ value: match.id, label: match.name }));
+      let options = matches.map((match) => ({
+        value: match.id,
+        label: match.name,
+      }));
       setSearchOptions(options);
     } else {
       setSearchOptions([]);
@@ -69,9 +93,9 @@ function AppHeader({ propertyLookupTree }) {
 
   function onSearchSelect(selectedItem, { action }) {
     setSearchOptions([]);
-    if (action === 'select-option') {
+    if (action === "select-option") {
       setTimeout(() => searchSelectRef.current.select.clearValue(), 0);
-      history.push('/property/' + selectedItem.value);
+      history.push("/property/" + selectedItem.value);
     }
   }
 
@@ -88,7 +112,7 @@ function AppHeader({ propertyLookupTree }) {
         onInputChange={onSearchChange}
         onChange={onSearchSelect}
         placeholder="Search"
-        noOptionsMessage={() => 'Enter a property name...'}
+        noOptionsMessage={() => "Enter a property name..."}
         ref={searchSelectRef}
       />
     </div>
